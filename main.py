@@ -153,7 +153,7 @@ questions = [
 ]
 
 # To store patient data
-patient_data = {}
+patient_data = {}  # Structure: {user_id: {patient_id: {score, timestamp}}}
 
 # Function to start the ALDEN questionnaire by asking for Patient ID
 async def alden(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -218,6 +218,7 @@ async def send_question(update: Update, context: ContextTypes.DEFAULT_TYPE, ques
 # Function to handle each ALDEN question and calculate score
 async def handle_alden_question(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_answer = update.message.text  # Get the user's answer
+    user_id = update.message.from_user.id
 
     # Check if they selected "Previous"
     if user_answer == "Previous" and context.user_data['question_index'] > 0:
@@ -248,7 +249,7 @@ async def handle_alden_question(update: Update, context: ContextTypes.DEFAULT_TY
         patient_id = context.user_data['patient_id']
         
         # Store the ALDEN score for the patient
-        await store_alden_score(patient_id, final_score)
+        await store_alden_score(user_id, patient_id, final_score)
         
         await update.message.reply_text(f"Final ALDEN score for Patient ID {patient_id}: {final_score}")
         context.user_data.clear()  # Clear user data after the questionnaire is done
@@ -256,12 +257,16 @@ async def handle_alden_question(update: Update, context: ContextTypes.DEFAULT_TY
         await restart(update, context)
 
 # Function to store ALDEN score
-async def store_alden_score(patient_id, score):
+async def store_alden_score(user_id, patient_id, score):
     # Get current timestamp
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     
-    # Store the score with timestamp and patient ID
-    patient_data[patient_id] = {
+    # Initialize data for the user if not present
+    if user_id not in patient_data:
+        patient_data[user_id] = {}
+
+    # Store the score with timestamp under the user's patient data
+    patient_data[user_id][patient_id] = {
         'score': score,
         'timestamp': timestamp
     }
@@ -269,14 +274,16 @@ async def store_alden_score(patient_id, score):
 # Function to retrieve and display previous ALDEN scores
 async def history(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.message.from_user.id
+
+    # Only retrieve patient data for the current user
     history_entries = [
-        f"Patient ID: {pid}, Score: {data['score']}, Timestamp: {data['timestamp']}"
-        for pid, data in patient_data.items()  # Retrieve patient IDs and scores
+        f"Patient ID: {pid}, Score: {data.get('score', 'N/A')}, Timestamp: {data.get('timestamp', 'N/A')}"
+        for pid, data in patient_data.get(user_id, {}).items()  # Retrieve patient data for the current doctor
     ]
-    
+
     if history_entries:
         history_message = "\n".join(history_entries)
-        await update.message.reply_text(f"Here are the previous ALDEN scores:\n\n{history_message}")
+        await update.message.reply_text(f"Here are your previous ALDEN scores:\n\n{history_message}")
     else:
         await update.message.reply_text("No previous ALDEN scores found.")
 
