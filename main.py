@@ -336,5 +336,5 @@ if __name__ == '__main__':
     app.run_webhook(
         listen = "0.0.0.0",
         port = int(os.environ.get("PORT", 8443)),
-        ssl_context = ('path/to/cert.pem', 'path/to/key.pem')
+        webhook_url = f"https://telemd.onrender.com/{TELEGRAM_TOKEN}"
     )
