@@ -10,8 +10,8 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, fil
 
 load_dotenv()
 TELEGRAM_TOKEN = os.getenv("BOT_API_TOKEN")
-PORT = int(os.environ.get('PORT', '5000'))
-WEBHOOK = os.getenv("WEBHOOK_URL")
+#PORT = int(os.environ.get('PORT', '5000'))
+#WEBHOOK = f"https://telemd.onrender.com/{TELEGRAM_TOKEN}"
 
 # Initialize logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -335,6 +335,6 @@ if __name__ == '__main__':
 
     app.run_webhook(
         listen = "0.0.0.0",
-        port = PORT,
-        webhook_url="WEBHOOK"
+        port = int(os.environ.get("PORT", 8443)),
+        ssl_context = ('path/to/cert.pem', 'path/to/key.pem')
     )
